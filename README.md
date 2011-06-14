@@ -5,21 +5,11 @@ This software is a LiveWhale application module that allows other applications t
 
 ### The Process
 
+Web applications subscribe to updates of a certain type (news, events, blurbs) and an optional group id or tag. From that point forward, as content matching a LiveWhale Push subscription is created, updated or deleted, LiveWhale Push sends a notification to the callback_url provided at the time the subscription was made.
 
-#### Subscribing
+The notification is a JSON object that includes details about the subscription being matched as well as the LiveWhale item id, and if the item is new, was deleted, or what fields changed. It does not send the entire record as in some cases that would be unnecessary.
 
-
-#### Push Notifications
-
-
-#### Data Retrieval
-
-Once an application is subscribed, the process is as follows:
-
-  * LiveWhale PubSubHub intercepts that content matching subscribed has been created, updated or deleted.
-  * It pulses 
-
-
+The application can then react to the notification, obtaining additional data through an API if needed.
 
 ## Requirements
 
@@ -66,18 +56,18 @@ You must install our [utilities classes](https://github.com/lewisandclark/utilit
 
 ### API
 
-This software only provides the means of updating web applications that an piece of content matching some parameters has changed. As it cannot fathom what your web application might do with this knowledge, it does not send the data itself. For that, you must have an external API available for your use, so that the application can retrieve the full record and react as per it’s own code.
+This software only provides the means of updating web applications that an piece of content matching some parameters has changed. As it cannot fathom what your web application might do with this knowledge, it does not send the data itself. For that, you must have an external API available for your use, so that the application can retrieve the full record and react as per it's own code.
 
 ## Installation
 
 The easiest way to install this software is to use git to clone it into your livewhale/client/modules folder as follows:
 
     $ cd /path/to/your/livewhale/client/modules
-    $ git clone git://github.com/lewisandclark/pubsubhub.git
+    $ git clone git://github.com/lewisandclark/push.git
 
-Git will then copy the most current version of the code into a pubsubhub folder within clients/modules.
+Git will then copy the most current version of the code into a push folder within clients/modules.
 
-If you don’t have or are unable to use git, you can also download a zip or tarball from github (use the downloads button) and extract it manually into the livewhale/client/modules folder as pubsubhub. (Don’t change the name, it will make it non-functional in LiveWhale.)
+If you don't have or are unable to use git, you can also download a zip or tarball from github (use the downloads button) and extract it manually into the livewhale/client/modules folder as push. (Don't change the name, it will make it non-functional in LiveWhale.)
 
 ## API Clients
 
@@ -89,4 +79,10 @@ If you are using MySQL, the following code would work (replace `client_id`, `cli
 
 ## Usage
 
-Once you have everything installed and have created your first API client, you will then be able to use the following three `/live/` REST urls to be able to subscribe web applications to content CRUD (creates, updates, deletes).
+Once you have everything installed and have created your first API client, you will then be able to use the following usage guide to manage LiveWhale Push notifications.
+
+### Subscriptions
+
+Web applications may use the three `/live/` REST urls to be able to manage their content subscriptions.
+
+
