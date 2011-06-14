@@ -319,12 +319,12 @@ class LiveWhalePush {
     		  $response = curl_exec($session);
           curl_close($session);
           $result = $this->is_valid_response($response, $callback_url);
-          if ( is_string($result) ) mail($client_email, 'LiveWhale Push Subscription Error', "{$result}\npayload:{$json}");
+          if ( is_string($result) ) @mail($client_email, 'LiveWhale Push Subscription Error', "{$result}\npayload:{$json}");
         } catch (Exception $e) {
           if ( !empty($json) ) {
-      		  mail($client_email, 'LiveWhale Push Subscription Error', "Exception: {$e}\n\nThe data was: {$json}");
+      		  @mail($client_email, 'LiveWhale Push Subscription Error', "Exception: {$e}\n\nThe data was: {$json}");
           } else {
-      		  mail($client_email, 'LiveWhale Push Subscription Error', "Exception: {$e}\n\nThe data was: " . var_export($updates, TRUE));
+      		  @mail($client_email, 'LiveWhale Push Subscription Error', "Exception: {$e}\n\nThe data was: " . var_export($updates, TRUE));
           }
         }
       }
