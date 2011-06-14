@@ -111,7 +111,7 @@ LiveWhale Push will call your callback as part of the subscription process to te
 
 If you wish, you can authenticate the request using the `verify_token` or handle additional issues before returning the `hub_challenge`. If you need or want the highest level of security, you can confirm that the `hub_challenge` matches the SHA1 digest of your initial subscription request ip address and your `callback_url` combined in that order with two dashes between, and encrypted with your `client_secret` as the secret.
 
-If your subscription request is successful created, you will receive a JSON array with a single subscription object. The subscription object (shown below) contains the subscription `id` and your `client_id`, as well as the `object`, `group_id` and `tag` for the subscription (regardless of whether they were specified or not). Otherwise, you will receive a http status code error along with an error message as to the problem encountered.
+If your subscription request is successfully created, you will receive a JSON array with a single subscription object. The subscription object (shown below) contains the subscription `id` and your `client_id`, as well as the `object`, `group_id` and `tag` for the subscription (regardless of whether they were specified or not). Otherwise, you will receive a http status code error along with an error message as to the problem encountered.
 
     [
       {
@@ -127,7 +127,7 @@ Excluding `verify_token`, if you attempt to create another subscription with the
 
 #### Unsubscribe
 
-To unsubscribe from LiveWhale Push, submit a POST request to `/live/unsubscribe` with your `client_id`, `client_secret` and `id`, where `id` is the id of the subscription you wish to terminate. (Https is recommended for security, but not required.) Again, unless your application requires active management of the subscriptions, you can use cURL to handle this:
+To unsubscribe from LiveWhale Push, submit a POST request to `/live/unsubscribe` with your `client_id`, `client_secret` and `id`, where `id` is the subscription id you wish to terminate. (Https is recommended for security, but not required.) Again, unless your application requires active management of the subscriptions, you can use cURL to handle this:
 
     curl \
       -F 'client_id=0123456798abcdef0123456798abcdef' \
@@ -139,7 +139,7 @@ If successful, you will receive a http status code of 200. Otherwise, you will r
 
 #### List Subscriptions
 
-To see your current subscriptions, submit a POST request to `/live/subscriptions` with your `client_id` and `client_secret`. Again, unless your application requires active management of the subscriptions, you can use cURL to handle this:
+To see your current subscriptions, submit a POST request to `/live/subscriptions` with your `client_id` and `client_secret`. (Https is recommended for security, but not required.) Again, unless your application requires active management of the subscriptions, you can use cURL to handle this:
 
     curl \
       -F 'client_id=0123456798abcdef0123456798abcdef' \
