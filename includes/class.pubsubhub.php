@@ -31,7 +31,7 @@ class PubSubHub {
       'allow' => 'alphanumeric characters plus dash or underscore',
       'transform' => "return preg_replace('~[^a-z\d_\-]+~i', '', \$value);"
       ),
-    'group' => array(
+    'group_id' => array(
       'allow' => 'an integer',
       'transform' => "return (int) \$value;"
       )
@@ -39,7 +39,7 @@ class PubSubHub {
   static $_subscription_public_columns = array(
     'id',
     'object',
-    'group',
+    'group_id',
     'tag',
     'callback_url'
     );
@@ -281,7 +281,7 @@ class PubSubHub {
 
   private function find_subscriptions_for ( $object, $tags, $changed ) {
   	global $_LW;
-    $query = "SELECT `" . PubSubHub::$_subscription_table . "`.*, `" . PubSubHub::$_clients_table . "`.`client_secret`, `" . PubSubHub::$_clients_table . "`.`email` FROM `" . PubSubHub::$_subscription_table . "` JOIN `" . PubSubHub::$_clients_table . "` ON `" . PubSubHub::$_subscription_table . "`.`client_id` = `" . PubSubHub::$_clients_table . "`.`id` WHERE `" . PubSubHub::$_subscription_table . "`.`object` = '{$this->_object_type}' AND (`" . PubSubHub::$_subscription_table . "`.`group` IS NULL" . ((!empty($object['gid'])) ? " OR `" . PubSubHub::$_subscription_table . "`.`group` = {$object['gid']}" : "") . ") AND (`" . PubSubHub::$_subscription_table . "`.`tag` is NULL" . ((!empty($tags)) ? " OR `" . PubSubHub::$_subscription_table . "`.`tag` = '" . implode("' OR `" . PubSubHub::$_subscription_table . "`.`tag` = '", $tags) . "'" : "") . ");";
+    $query = "SELECT `" . PubSubHub::$_subscription_table . "`.*, `" . PubSubHub::$_clients_table . "`.`client_secret`, `" . PubSubHub::$_clients_table . "`.`email` FROM `" . PubSubHub::$_subscription_table . "` JOIN `" . PubSubHub::$_clients_table . "` ON `" . PubSubHub::$_subscription_table . "`.`client_id` = `" . PubSubHub::$_clients_table . "`.`id` WHERE `" . PubSubHub::$_subscription_table . "`.`object` = '{$this->_object_type}' AND (`" . PubSubHub::$_subscription_table . "`.`group_id` IS NULL" . ((!empty($object['gid'])) ? " OR `" . PubSubHub::$_subscription_table . "`.`group_id` = {$object['gid']}" : "") . ") AND (`" . PubSubHub::$_subscription_table . "`.`tag` is NULL" . ((!empty($tags)) ? " OR `" . PubSubHub::$_subscription_table . "`.`tag` = '" . implode("' OR `" . PubSubHub::$_subscription_table . "`.`tag` = '", $tags) . "'" : "") . ");";
 		$result = $_LW->query($query);
   	if ( !empty($result) && $result->num_rows ) {
       while ( $subscription = $result->fetch_assoc() ) {
@@ -292,7 +292,7 @@ class PubSubHub {
           'subscription_id' => (int) $subscription['id'],
           'object' => $this->_object_type,
           'object_id' => (int) $object['id'],
-          'group' => ((empty($subscription['group'])) ? '' : (int) $subscription['group']),
+          'group_id' => ((empty($subscription['group_id'])) ? '' : (int) $subscription['group_id']),
           'tag' => ((empty($subscription['tag'])) ? '' : $subscription['tag']),
           'updated_at' => date("c"),
           'is_new' => (($changed['is_new']) ? TRUE : FALSE),
@@ -392,9 +392,9 @@ class PubSubHub {
 
 }
 
-/* curl -F 'client_id=5c79002e5ca04de49f9a2bafedd0acb0' -F 'client_secret=54a393596d314fcb985ca796ebf0923e' -F 'object=news' -F 'tag=greens' -F 'group=10' -F 'verify_token=wooo-hooo' -F 'callback_url=http://www.lclark.edu/tools/subscription_test.php' http://www.lclark.edu/live/subscribe/ */
+/* curl -F 'client_id=5c79002e5ca04de49f9a2bafedd0acb0' -F 'client_secret=54a393596d314fcb985ca796ebf0923e' -F 'object=news' -F 'tag=greens' -F 'group_id=10' -F 'verify_token=wooo-hooo' -F 'callback_url=http://www.lclark.edu/tools/subscription_test.php' http://www.lclark.edu/live/subscribe/ */
 
-/* curl -F 'client_id=5c79002e5ca04de49f9a2bafedd0acb0' -F 'client_secret=54a393596d314fcb985ca796ebf0923e' -F 'object=news' -F 'tag=greens' -F 'group=13' -F 'callback_url=http://www.lclark.edu/tools/subscription_test.php' http://www.lclark.edu/live/unsubscribe/ */
+/* curl -F 'client_id=5c79002e5ca04de49f9a2bafedd0acb0' -F 'client_secret=54a393596d314fcb985ca796ebf0923e' -F 'object=news' -F 'tag=greens' -F 'group_id=13' -F 'callback_url=http://www.lclark.edu/tools/subscription_test.php' http://www.lclark.edu/live/unsubscribe/ */
 
 /* curl -F 'client_id=5c79002e5ca04de49f9a2bafedd0acb0' -F 'client_secret=54a393596d314fcb985ca796ebf0923e' -F 'object=news' -F 'tag=greens' -F 'callback_url=http://www.lclark.edu/tools/subscription_test.php' http://www.lclark.edu/live/unsubscribe/ */
 
