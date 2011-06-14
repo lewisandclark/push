@@ -3,7 +3,7 @@
 require_once($_LW->INCLUDES_DIR_PATH.'/client/utilities/class.inflector.php');
 require_once($_LW->INCLUDES_DIR_PATH.'/client/utilities/class.httpstatuscodes.php');
 
-class PubSubHub {
+class LiveWhalePush {
 
   /* database tables */
   static $_subscription_table = 'livewhale_hubsubscriptions';
@@ -67,7 +67,7 @@ class PubSubHub {
   public function __construct () {
   	global $_LW;
     $this->_object_type = preg_replace('~_(edit|list)$~', '', $_LW->page);
-    if ( in_array($this->_object_type, PubSubHub::$_subscription_objects) ) $this->_watching = TRUE;
+    if ( in_array($this->_object_type, LiveWhalePush::$_subscription_objects) ) $this->_watching = TRUE;
     if ( $this->_watching ) {
       if ( !empty($_GET['d']) ) { // editor delete
         $delete_id = preg_replace('~[^\d]+~', '', $_GET['d']);
@@ -93,9 +93,9 @@ class PubSubHub {
     global $_LW;
     if ( array_key_exists('client_id', $args) ) $id = preg_replace('~[^a-f\d]~', '', $args['client_id']);
     if ( array_key_exists('client_secret', $args) ) $secret = preg_replace('~[^a-f\d]~', '', $args['client_secret']);
-    if ( empty($id) || strlen($id) != PubSubHub::$_api_client_id_length ) HTTPStatusCodes::unauthorized("This action requires a valid API client id.");
-    if ( empty($secret) || strlen($secret) != PubSubHub::$_api_client_secret_length ) HTTPStatusCodes::unauthorized("This action requires a valid API client secret.");
-    $result = $_LW->query("SELECT * FROM `" . PubSubHub::$_clients_table . "` WHERE `client_id` = '{$id}' AND `client_secret` = '{$secret}';");
+    if ( empty($id) || strlen($id) != LiveWhalePush::$_api_client_id_length ) HTTPStatusCodes::unauthorized("This action requires a valid API client id.");
+    if ( empty($secret) || strlen($secret) != LiveWhalePush::$_api_client_secret_length ) HTTPStatusCodes::unauthorized("This action requires a valid API client secret.");
+    $result = $_LW->query("SELECT * FROM `" . LiveWhalePush::$_clients_table . "` WHERE `client_id` = '{$id}' AND `client_secret` = '{$secret}';");
     if ( !empty($result) && $result->num_rows == 1 ) return $result->fetch_assoc();
     HTTPStatusCodes::unauthorized("This action requires a valid API user; your client id and secret were not found.");
   }
@@ -106,10 +106,10 @@ class PubSubHub {
       $args['id'] = (int) $args['id'];
     } else {
       if ( !array_key_exists('object', $args) || empty($args['object']) ) HTTPStatusCodes::bad_request("Subscription requests require an object.");
-      if ( !in_array($args['object'], PubSubHub::$_subscription_objects) ) HTTPStatusCodes::bad_request("Subscription requests require an object to be one of: " . Inflector::to_sentence(PubSubHub::$_subscription_objects, ', ', ' or ') . ".");
+      if ( !in_array($args['object'], LiveWhalePush::$_subscription_objects) ) HTTPStatusCodes::bad_request("Subscription requests require an object to be one of: " . Inflector::to_sentence(LiveWhalePush::$_subscription_objects, ', ', ' or ') . ".");
       if ( !array_key_exists('callback_url', $args) || empty($args['callback_url']) ) HTTPStatusCodes::bad_request("Subscription requests require a callback_url.");
       if ( preg_replace('~[^a-z\d:/\-_\.]~i', '', $args['callback_url']) != $args['callback_url'] ) HTTPStatusCodes::bad_request("Subscription requests require a callback_url containing only alphanumeric characters plus colon, period, slash, dash and underscore.");
-      foreach ( PubSubHub::$_subscription_aspects as $aspect => $details ) {
+      foreach ( LiveWhalePush::$_subscription_aspects as $aspect => $details ) {
         if ( array_key_exists($aspect, $args) ) {
           if ( empty($args[$aspect]) ) HTTPStatusCodes::bad_request("Subscription requests that possess an aspect such as {$aspect} must provide a value; don't send it otherwise.");
           $value = $args[$aspect];
@@ -121,12 +121,12 @@ class PubSubHub {
   }
 
   private function subscription_query ( $args, $lead = 'SELECT * FROM' ) {
-    $query = "{$lead} `" . PubSubHub::$_subscription_table . "` WHERE `client_id` = {$args['client_id']}";
+    $query = "{$lead} `" . LiveWhalePush::$_subscription_table . "` WHERE `client_id` = {$args['client_id']}";
     if ( array_key_exists('id', $args) && !empty($args['id']) ) {
       $query .= " AND `id` = {$args['id']}";
     } else {
       $query .= " AND `object` = '{$args['object']}'";
-      foreach ( PubSubHub::$_subscription_aspects as $aspect => $details ) {
+      foreach ( LiveWhalePush::$_subscription_aspects as $aspect => $details ) {
         if ( (!array_key_exists($aspect, $args) || empty($args[$aspect])) && $lead == 'SELECT * FROM' ) {
           $query .= " AND `{$aspect}` IS NULL";
         } else if ( array_key_exists($aspect, $args) && !empty($args[$aspect]) ) {
@@ -166,7 +166,7 @@ class PubSubHub {
   private function as_value ( &$value, $key, $args ) {
     if ( array_key_exists($key, $args) && !empty($args[$key]) ) {
       $value = $args[$key];
-      if ( array_key_exists($key, PubSubHub::$_subscription_aspects) && array_key_exists('transform', PubSubHub::$_subscription_aspects[$key]) && !empty(PubSubHub::$_subscription_aspects[$key]['transform']) ) $value = eval(PubSubHub::$_subscription_aspects[$key]['transform']);
+      if ( array_key_exists($key, LiveWhalePush::$_subscription_aspects) && array_key_exists('transform', LiveWhalePush::$_subscription_aspects[$key]) && !empty(LiveWhalePush::$_subscription_aspects[$key]['transform']) ) $value = eval(LiveWhalePush::$_subscription_aspects[$key]['transform']);
       if ( !is_int($args[$key]) && !is_numeric($args[$key]) ) $value = "'{$value}'";
     } else if ( substr($key, -3) == '_at' ) {
       $value = "NOW()";
@@ -179,12 +179,12 @@ class PubSubHub {
 
   private function create_subscription ( $args ) {
     global $_LW;
-    $columns = PubSubHub::$_subscription_columns;
-    $columns = array_merge(array_keys(PubSubHub::$_subscription_aspects), $columns);
+    $columns = LiveWhalePush::$_subscription_columns;
+    $columns = array_merge(array_keys(LiveWhalePush::$_subscription_aspects), $columns);
     $values = array_fill_keys($columns, 'NULL');
     array_walk($values, array($this, 'as_value'), $args);
     array_walk($columns, array($this, 'as_column'));
-    $result = $_LW->query("INSERT INTO `" . PubSubHub::$_subscription_table . "` (" . implode(', ', $columns) . ") VALUES (" . implode(', ', $values) . ");");
+    $result = $_LW->query("INSERT INTO `" . LiveWhalePush::$_subscription_table . "` (" . implode(', ', $columns) . ") VALUES (" . implode(', ', $values) . ");");
     if ( empty($result) ) HTTPStatusCodes::server_error("We were unable to create your subscription at this time.");
 		$result = $_LW->query('SELECT LAST_INSERT_ID() AS id;');
 		if ( empty($result) || $result->num_rows < 1 ) {
@@ -201,7 +201,6 @@ class PubSubHub {
     global $_LW;
     $query = $this->subscription_query($args, "DELETE FROM");
     $result = $_LW->query($query);
-    var_dump($query, $result);
     if ( empty($result) ) HTTPStatusCodes::server_error("We were unable to delete your subscription at this time.");
     HTTPStatusCodes::ok("Subscription deleted.");
   }
@@ -230,7 +229,7 @@ class PubSubHub {
     while ( is_array($args) && count($args) == 1 && is_array($args[0]) ) $args = $args[0];
     $args['client'] = $this->require_valid_api_client($args);
     $args['client_id'] = (int) $args['client']['id'];
-		$result = $_LW->query("SELECT * FROM `" . PubSubHub::$_subscription_table . "` WHERE `client_id` = {$args['client_id']};");
+		$result = $_LW->query("SELECT * FROM `" . LiveWhalePush::$_subscription_table . "` WHERE `client_id` = {$args['client_id']};");
 		if ( empty($result) || $result->num_rows < 1 ) HTTPStatusCodes::not_found("There were no subscriptions found.");
 		$subscriptions = array();
 		while ( $row = $result->fetch_assoc() ) $subscriptions[] = $this->public_subscription_for($row);
@@ -240,7 +239,7 @@ class PubSubHub {
   /* output methods */
   private function public_subscription_for ( $subscription = array() ) {
     $output = array();
-    foreach ( PubSubHub::$_subscription_public_columns as $key ) {
+    foreach ( LiveWhalePush::$_subscription_public_columns as $key ) {
       if ( array_key_exists($key, $subscription) && !empty($subscription[$key]) && $subscription[$key] != 'NULL' ) {
         $output[$key] = preg_replace('~^\'(.*)\'$~', '$1', $subscription[$key]);
       }
@@ -281,7 +280,7 @@ class PubSubHub {
 
   private function find_subscriptions_for ( $object, $tags, $changed ) {
   	global $_LW;
-    $query = "SELECT `" . PubSubHub::$_subscription_table . "`.*, `" . PubSubHub::$_clients_table . "`.`client_secret`, `" . PubSubHub::$_clients_table . "`.`email` FROM `" . PubSubHub::$_subscription_table . "` JOIN `" . PubSubHub::$_clients_table . "` ON `" . PubSubHub::$_subscription_table . "`.`client_id` = `" . PubSubHub::$_clients_table . "`.`id` WHERE `" . PubSubHub::$_subscription_table . "`.`object` = '{$this->_object_type}' AND (`" . PubSubHub::$_subscription_table . "`.`group_id` IS NULL" . ((!empty($object['gid'])) ? " OR `" . PubSubHub::$_subscription_table . "`.`group_id` = {$object['gid']}" : "") . ") AND (`" . PubSubHub::$_subscription_table . "`.`tag` is NULL" . ((!empty($tags)) ? " OR `" . PubSubHub::$_subscription_table . "`.`tag` = '" . implode("' OR `" . PubSubHub::$_subscription_table . "`.`tag` = '", $tags) . "'" : "") . ");";
+    $query = "SELECT `" . LiveWhalePush::$_subscription_table . "`.*, `" . LiveWhalePush::$_clients_table . "`.`client_secret`, `" . LiveWhalePush::$_clients_table . "`.`email` FROM `" . LiveWhalePush::$_subscription_table . "` JOIN `" . LiveWhalePush::$_clients_table . "` ON `" . LiveWhalePush::$_subscription_table . "`.`client_id` = `" . LiveWhalePush::$_clients_table . "`.`id` WHERE `" . LiveWhalePush::$_subscription_table . "`.`object` = '{$this->_object_type}' AND (`" . LiveWhalePush::$_subscription_table . "`.`group_id` IS NULL" . ((!empty($object['gid'])) ? " OR `" . LiveWhalePush::$_subscription_table . "`.`group_id` = {$object['gid']}" : "") . ") AND (`" . LiveWhalePush::$_subscription_table . "`.`tag` is NULL" . ((!empty($tags)) ? " OR `" . LiveWhalePush::$_subscription_table . "`.`tag` = '" . implode("' OR `" . LiveWhalePush::$_subscription_table . "`.`tag` = '", $tags) . "'" : "") . ");";
 		$result = $_LW->query($query);
   	if ( !empty($result) && $result->num_rows ) {
       while ( $subscription = $result->fetch_assoc() ) {
@@ -320,12 +319,12 @@ class PubSubHub {
     		  $response = curl_exec($session);
           curl_close($session);
           $result = $this->is_valid_response($response, $callback_url);
-          if ( is_string($result) ) mail($client_email, 'LiveWhale PubSubHub Subscription Error', "{$result}\npayload:{$json}");
+          if ( is_string($result) ) mail($client_email, 'LiveWhale Push Subscription Error', "{$result}\npayload:{$json}");
         } catch (Exception $e) {
           if ( !empty($json) ) {
-      		  mail($client_email, 'LiveWhale PubSubHub Subscription Error', "Exception: {$e}\n\nThe data was: {$json}");
+      		  mail($client_email, 'LiveWhale Push Subscription Error', "Exception: {$e}\n\nThe data was: {$json}");
           } else {
-      		  mail($client_email, 'LiveWhale PubSubHub Subscription Error', "Exception: {$e}\n\nThe data was: " . var_export($updates, TRUE));
+      		  mail($client_email, 'LiveWhale Push Subscription Error', "Exception: {$e}\n\nThe data was: " . var_export($updates, TRUE));
           }
         }
       }
@@ -391,15 +390,5 @@ class PubSubHub {
   }
 
 }
-
-/* curl -F 'client_id=5c79002e5ca04de49f9a2bafedd0acb0' -F 'client_secret=54a393596d314fcb985ca796ebf0923e' -F 'object=news' -F 'tag=greens' -F 'group_id=10' -F 'verify_token=wooo-hooo' -F 'callback_url=http://www.lclark.edu/tools/subscription_test.php' http://www.lclark.edu/live/subscribe/ */
-
-/* curl -F 'client_id=5c79002e5ca04de49f9a2bafedd0acb0' -F 'client_secret=54a393596d314fcb985ca796ebf0923e' -F 'object=news' -F 'tag=greens' -F 'group_id=13' -F 'callback_url=http://www.lclark.edu/tools/subscription_test.php' http://www.lclark.edu/live/unsubscribe/ */
-
-/* curl -F 'client_id=5c79002e5ca04de49f9a2bafedd0acb0' -F 'client_secret=54a393596d314fcb985ca796ebf0923e' -F 'object=news' -F 'tag=greens' -F 'callback_url=http://www.lclark.edu/tools/subscription_test.php' http://www.lclark.edu/live/unsubscribe/ */
-
-/* curl -F 'client_id=5c79002e5ca04de49f9a2bafedd0acb0' -F 'client_secret=54a393596d314fcb985ca796ebf0923e' -F 'id=5' http://www.lclark.edu/live/unsubscribe/ */
-
-/* curl -F 'client_id=5c79002e5ca04de49f9a2bafedd0acb0' -F 'client_secret=54a393596d314fcb985ca796ebf0923e' http://www.lclark.edu/live/subscriptions/ */
 
 ?>

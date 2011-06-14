@@ -7,12 +7,12 @@ $_LW->REGISTERED_APPS['push']=array(
 
 // ----- PASS-THRU HANDLERS ---------------------------------------------------------
 
-class LiveWhaleApplicationPubsubhub {
+class LiveWhaleApplicationPush {
 
   public function init () {
     global $_LW;
-  	include_once($_LW->INCLUDES_DIR_PATH . '/client/modules/push/includes/class.push.php');
-    $_LW->REGISTERED_APPS['push']['object'] = new PubSubHub();
+  	include_once($_LW->INCLUDES_DIR_PATH . '/client/modules/push/includes/class.livewhalepush.php');
+    $_LW->REGISTERED_APPS['push']['object'] = new LiveWhalePush();
     return NULL;
   }
   
