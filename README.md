@@ -58,6 +58,8 @@ You must install our [utilities classes](https://github.com/lewisandclark/utilit
 
 This software only provides the means of updating web applications that an piece of content matching some parameters has changed. As it cannot fathom what your web application might do with this knowledge, it does not send the data itself. For that, you must have an external API available for your use, so that the application can retrieve the full record and react as per it's own code.
 
+There isn't an official LiveWhale API yet. For our use, we have simply grafted a Rails app onto the LiveWhale tables as a read-only REST interface. (LiveWhale, the Rails app and our database are all on the same server, but it need not be that way.) I'd recommend this path if you know Rails, as it only takes a little while to setup.
+
 ## Installation
 
 The easiest way to install this software is to use git to clone it into your livewhale/client/modules folder as follows:
@@ -65,7 +67,7 @@ The easiest way to install this software is to use git to clone it into your liv
     $ cd /path/to/your/livewhale/client/modules
     $ git clone git://github.com/lewisandclark/push.git
 
-Git will then copy the most current version of the code into a push folder within clients/modules.
+Git will then copy the most current version of the code into a push folder within client/modules.
 
 If you don't have or are unable to use git, you can also download a zip or tarball from github (use the downloads button) and extract it manually into the livewhale/client/modules folder as push. (Don't change the name, it will make it non-functional in LiveWhale.)
 
