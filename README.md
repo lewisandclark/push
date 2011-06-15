@@ -60,9 +60,9 @@ You must install our [utilities classes](https://github.com/lewisandclark/utilit
 
 ### API
 
-This software only provides the means of updating web applications that an piece of content matching some parameters has changed. As it cannot fathom what your web application might do with this knowledge, it does not send the data itself. For that, you must have an external API available for your use, so that the application can retrieve the full record and react as per it's own code.
+This software only provides the means of updating web applications that an piece of content matching some parameters has changed. As it cannot fathom what your web application might do with this knowledge, it does not send the data itself. There is one built in option for retrieving key fields that are normally available through widgets (outlined in Notifications > Content Retrieval below).
 
-There isn't an official LiveWhale API yet. For our use, we have simply grafted a Rails app onto the LiveWhale tables as a read-only REST interface. (LiveWhale, the Rails app and our database are all on the same server, but it need not be that way.) I'd recommend this path if you know Rails, as it only takes a little while to setup.
+However, if you need a greater level of data, or access to data that is not currently live (i.e. hidden or scheduled), there isn't an official LiveWhale API yet. For our use, we have simply grafted a Rails app onto the LiveWhale tables as a read-only REST interface. (LiveWhale, the Rails app and our database are all on the same server, but it need not be that way.) I'd recommend this path as a temporary solution if you know Rails, as it only takes a little while to setup.
 
 ## Installation
 
@@ -175,6 +175,52 @@ Once a subscription has been created, LiveWhale Push monitors all CRUD actions (
 You may receive one or more updates at a time, so your application should be prepared for that possibility. Also, in the event that an item has a watched `tag` added or subtracted -- thus entering or exiting a watched status -- you will receive a notification in all cases so that your application can sort out an appropriate action.
 
 In the event that LiveWhale Push cannot access your callback for any reason, it will send an email your the API client's email address with an error message along with any data that was being pushed, in whatever state it might be at the time of the error.
+
+#### Content Retrieval 
+
+If the content is live (i.e. not hidden or scheduled), you can retrieve the widget-available fields through the `/live/` request methods. For example, if you received an update for event id #6117, you could get that content as JSON or XML:
+
+    http://your.livewhale.com/live/events/6114@JSON
+    http://your.livewhale.com/live/events/6114@XML
+
+The JSON version of the above request produces (from our LiveWhale instance):
+
+    {
+      id: '6114',
+      title: 'Oregon Bus Project',
+      date: '06/13/2011',
+      date_time: null,
+      date2: null,
+      date2_time: null,
+      repeats: null,
+      repeats_until: null,
+      summary: '<a href="http://busproject.org/">Summer Conference</a>',
+      description: '<p>\n  <a href="http://busproject.org/">Summer Conference</a>\n</p>',
+      location: 'JRHH 202 &amp; Grape Arbor',
+      date_created: '2011-06-10 15:32:31',
+      last_modified: '2011-06-14 09:39:33',
+      has_registration: null,
+      image: null,
+      url: http://www.lclark.edu/live/events/6114-oregon-bus-project'
+    }
+
+The XML version produces the same result in XML with null elements dropped:
+
+    <result>
+      <id>6114</id>
+      <title>Oregon Bus Project</title>
+      <date>06/13/2011</date>
+      <summary>&lt;a href="http://busproject.org/"&gt;Summer Conference&lt;/a&gt;</summary>
+      <description>&lt;p&gt;
+      &lt;a href="http://busproject.org/"&gt;Summer Conference&lt;/a&gt;
+    &lt;/p&gt;</description>
+      <location>JRHH 202 &amp; Grape Arbor</location>
+      <date_created>2011-06-10 15:32:31</date_created>
+      <last_modified>2011-06-14 09:39:33</last_modified>
+      <url>http://www.lclark.edu/live/events/6114-oregon-bus-project</url>
+    </result>
+
+As noted above, if you need a greater level of access than this, you'll need an API or other method to retrieve data.
 
 ## Developers
 
