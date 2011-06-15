@@ -13,6 +13,10 @@ The application can then react to the notification, obtaining additional data th
 
 ## Requirements
 
+### LiveWhale
+
+Although this software might work with earlier versions, it has only been tested with LiveWhale 1.4.1 or better.
+
 ### Database Tables
 
 You must add two new tables to your LiveWhale database as follows:
