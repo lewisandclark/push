@@ -352,7 +352,13 @@ class LiveWhalePush {
       }
     }
     if ( !empty($after) ) {
-      $tags = array_unique(array_merge(explode(',', $this->_before_update[$after['id']]['search_tags']), explode(',', $after['search_tags'])));
+      if ( !empty($this->_before_update[$after['id']]['search_tags']) ) {
+        $tags = explode(',', $this->_before_update[$after['id']]['search_tags']);
+      } else {
+        $tags = array();
+      }
+      if ( !empty($after['search_tags']) ) $tags = array_merge($tags, explode(',', $after['search_tags']));
+      $tags = array_unique($tags);
       $this->find_subscriptions_for($after, $tags, $changed);
       return $this->notify_subscribers();
     }
