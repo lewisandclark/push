@@ -3,6 +3,11 @@
 require_once($_LW->INCLUDES_DIR_PATH.'/client/utilities/class.inflector.php');
 require_once($_LW->INCLUDES_DIR_PATH.'/client/utilities/class.httpstatuscodes.php');
 
+// $qry = "SELECT *,(((acos(sin((".$latitude."*pi()/180)) * sin((`Latitude`*pi()/180))+cos((".$latitude."*pi()/180)) * cos((`Latitude`*pi()/180)) * cos(((".$longitude."- `Longitude`)*pi()/180))))*180/pi())*60*1.1515) as distance FROM `MyTable` WHERE distance <= ".$distance."
+
+// set @mypoint = PointFromWKB(point(20,20))
+// where GLength(LineStringFromWKB(LineString(asbinary(utm), asbinary(@mypoint)))) < 9999999999999;
+
 class LiveWhalePush {
 
   /* database tables */
@@ -38,6 +43,10 @@ class LiveWhalePush {
     'place_id' => array(
       'allow' => 'an integer',
       'transform' => "return (int) \$value;"
+      ),
+    'radius' => array(
+      'allow' => 'a positive decimal',
+      'transform' => "return abs((float) \$value);"
       )
     );
   static $_subscription_public_columns = array(
@@ -45,6 +54,7 @@ class LiveWhalePush {
     'object',
     'group_id',
     'place_id',
+    'radius',
     'tag',
     'callback_url'
     );
@@ -74,20 +84,23 @@ class LiveWhalePush {
     $this->_object_type = preg_replace('~_(edit|list)$~', '', $_LW->page);
     if ( in_array($this->_object_type, LiveWhalePush::$_subscription_objects) ) $this->_watching = TRUE;
     if ( $this->_watching ) {
+      $this->_query = "SELECT `livewhale_{$this->_object_type}`.*, GROUP_CONCAT(`livewhale_places`.`id`) AS `place_ids`, GROUP_CONCAT(`livewhale_places`.`latitude`) AS `place_latitudes`, GROUP_CONCAT(`livewhale_places`.`longitude`) AS `place_longitudes` FROM `livewhale_{$this->_object_type}` INNER JOIN `livewhale_places2any` ON (`livewhale_{$this->_object_type}`.`id` = `livewhale_places2any`.`id2` AND `livewhale_places2any`.`type` = '{$this->_object_type}') INNER JOIN `livewhale_places` ON `livewhale_places`.`id` = `livewhale_places2any`.`id1` WHERE `livewhale_{$this->_object_type}`.`id`";
       if ( !empty($_GET['d']) ) { // editor delete
         $delete_id = preg_replace('~[^\d]+~', '', $_GET['d']);
         if ( $_GET['d'] == $delete_id ) {
           $this->_delete_ids = array($delete_id);
-          $this->_query = "SELECT `livewhale_{$this->_object_type}`.* FROM `livewhale_{$this->_object_type}` WHERE `livewhale_{$this->_object_type}`.`id` = {$delete_id};";
+          $this->_query .= " = {$delete_id};";
         }
       } else if ( !empty($_LW->_POST['dropdown_checked']) && !empty($_LW->_POST['items']) ) { // manager dropdown action
         if ( $_LW->_POST['dropdown_checked'] == "{$this->_object_type}_delete" ) $this->_delete_ids = $_LW->_POST['items'];
-        $this->_query = "SELECT `livewhale_{$this->_object_type}`.* FROM `livewhale_{$this->_object_type}` WHERE `livewhale_{$this->_object_type}`.`id` IN (" . implode(',', $_LW->_POST['items']) . ");";
+        $this->_query .= " IN (" . implode(',', $_LW->_POST['items']) . ");";
       } else if ( !empty($_LW->_POST['item_id']) ) { // editor update
-        $this->_query = "SELECT `livewhale_{$this->_object_type}`.*, `livewhale_places2any`.`id1` AS `place_ids` FROM `livewhale_{$this->_object_type}` INNER JOIN `livewhale_places2any` ON (`livewhale_{$this->_object_type}`.`id` = `livewhale_places2any`.`id2` AND `livewhale_places2any`.`type` = '{$this->_object_type}') WHERE `livewhale_{$this->_object_type}`.`id` = " . $_LW->_POST['item_id'] . ";";
+        $this->_query .= " = " . $_LW->_POST['item_id'] . ";";
       } else if ( !empty($_LW->_POST[$_LW->page]) && is_array($_LW->_POST[$_LW->page]) ) { // manager multi-click action
-        $this->_query = "SELECT `livewhale_{$this->_object_type}`.* FROM `livewhale_{$this->_object_type}` WHERE `livewhale_{$this->_object_type}`.`id` IN (" . implode(',', $_LW->_POST[$_LW->page]) . ");";
-      } // else create
+        $this->_query .= " IN (" . implode(',', $_LW->_POST[$_LW->page]) . ");";
+      } else { // else create
+        unset($this->_query);
+      }
     }
     if ( !empty($this->_query) ) $result = $_LW->query($this->_query);
     if ( !empty($result) && $result->num_rows ) while ( $item = $result->fetch_assoc() ) $this->_before_update[$item['id']] = $item;
@@ -189,8 +202,9 @@ class LiveWhalePush {
     $values = array_fill_keys($columns, 'NULL');
     array_walk($values, array($this, 'as_value'), $args);
     array_walk($columns, array($this, 'as_column'));
-    $result = $_LW->query("INSERT INTO `" . LiveWhalePush::$_subscription_table . "` (" . implode(', ', $columns) . ") VALUES (" . implode(', ', $values) . ");");
-    if ( empty($result) ) HTTPStatusCodes::server_error("We were unable to create your subscription at this time.");
+    $query = "INSERT INTO `" . LiveWhalePush::$_subscription_table . "` (" . implode(', ', $columns) . ") VALUES (" . implode(', ', $values) . ");";
+    $result = $_LW->query($query);
+    if ( empty($result) ) HTTPStatusCodes::server_error("We were unable to create your subscription at this time. Query( {$query} )");
 		$result = $_LW->query('SELECT LAST_INSERT_ID() AS id;');
 		if ( empty($result) || $result->num_rows < 1 ) {
       $query = $this->subscription_query($args, "DELETE FROM");
@@ -285,7 +299,7 @@ class LiveWhalePush {
 
   private function find_subscriptions_for ( $object, $tags, $changed ) {
   	global $_LW;
-    $query = "SELECT `" . LiveWhalePush::$_subscription_table . "`.*, `" . LiveWhalePush::$_clients_table . "`.`client_secret`, `" . LiveWhalePush::$_clients_table . "`.`email` FROM `" . LiveWhalePush::$_subscription_table . "` JOIN `" . LiveWhalePush::$_clients_table . "` ON `" . LiveWhalePush::$_subscription_table . "`.`client_id` = `" . LiveWhalePush::$_clients_table . "`.`id` WHERE `" . LiveWhalePush::$_subscription_table . "`.`object` = '{$this->_object_type}' AND (`" . LiveWhalePush::$_subscription_table . "`.`group_id` IS NULL" . ((!empty($object['gid'])) ? " OR `" . LiveWhalePush::$_subscription_table . "`.`group_id` = {$object['gid']}" : "") . ") AND (`" . LiveWhalePush::$_subscription_table . "`.`place_id` IS NULL" . ((!empty($object['place_ids'])) ? " OR `" . LiveWhalePush::$_subscription_table . "`.`place_id` IN ({$object['place_ids']})" : "") . ") AND (`" . LiveWhalePush::$_subscription_table . "`.`tag` is NULL" . ((!empty($tags)) ? " OR `" . LiveWhalePush::$_subscription_table . "`.`tag` = '" . implode("' OR `" . LiveWhalePush::$_subscription_table . "`.`tag` = '", $tags) . "'" : "") . ");";
+    $query = "SELECT `" . LiveWhalePush::$_subscription_table . "`.*, `" . LiveWhalePush::$_clients_table . "`.`client_secret`, `" . LiveWhalePush::$_clients_table . "`.`email`, `livewhale_places`.`latitude` AS `latitude`, `livewhale_places`.`longitude` AS `longitude` FROM `" . LiveWhalePush::$_subscription_table . "` JOIN `" . LiveWhalePush::$_clients_table . "` ON `" . LiveWhalePush::$_subscription_table . "`.`client_id` = `" . LiveWhalePush::$_clients_table . "`.`id` LEFT JOIN `livewhale_places` ON `livewhale_places`.`id` = `" . LiveWhalePush::$_subscription_table . "`.`place_id` WHERE `" . LiveWhalePush::$_subscription_table . "`.`object` = '{$this->_object_type}' AND (`" . LiveWhalePush::$_subscription_table . "`.`group_id` IS NULL" . ((!empty($object['gid'])) ? " OR `" . LiveWhalePush::$_subscription_table . "`.`group_id` = {$object['gid']}" : "") . ") AND (`" . LiveWhalePush::$_subscription_table . "`.`place_id` IS NULL" . ((!empty($object['place_ids'])) ? " OR `" . LiveWhalePush::$_subscription_table . "`.`place_id` IN ({$object['place_ids']})" : "") . ") AND (`" . LiveWhalePush::$_subscription_table . "`.`tag` is NULL" . ((!empty($tags)) ? " OR `" . LiveWhalePush::$_subscription_table . "`.`tag` = '" . implode("' OR `" . LiveWhalePush::$_subscription_table . "`.`tag` = '", $tags) . "'" : "") . ");";
 		$result = $_LW->query($query);
   	if ( !empty($result) && $result->num_rows ) {
       while ( $subscription = $result->fetch_assoc() ) {
@@ -297,7 +311,8 @@ class LiveWhalePush {
           'object' => $this->_object_type,
           'object_id' => (int) $object['id'],
           'group_id' => ((empty($subscription['group_id'])) ? '' : (int) $subscription['group_id']),
-          'place_id' => ((empty($subscription['location_id'])) ? '' : (int) $subscription['place_id']),
+          'place_id' => ((empty($subscription['place_id'])) ? '' : (int) $subscription['place_id']),
+          'radius' => ((empty($subscription['radius'])) ? '' : (float) $subscription['radius']),
           'tag' => ((empty($subscription['tag'])) ? '' : $subscription['tag']),
           'updated_at' => date("c"),
           'is_new' => (($changed['is_new']) ? TRUE : FALSE),
