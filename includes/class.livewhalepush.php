@@ -208,6 +208,7 @@ class LiveWhalePush {
     $columns = array_merge(array_keys(LiveWhalePush::$_subscription_aspects), $columns);
     $values = array_fill_keys($columns, 'NULL');
     array_walk($values, array($this, 'as_value'), $args);
+    if ( !empty($values['place_id']) && $values['radius'] == 'NULL' ) $values['radius'] = 0;
     array_walk($columns, array($this, 'as_column'));
     $query = "INSERT INTO `" . LiveWhalePush::$_subscription_table . "` (" . implode(', ', $columns) . ") VALUES (" . implode(', ', $values) . ");";
     $result = $_LW->query($query);

@@ -15,7 +15,7 @@ The application can then react to the notification, obtaining additional data th
 
 ### LiveWhale
 
-Although this software might work with earlier versions, it has only been tested with LiveWhale 1.4.1 or better.
+Although this software might work with earlier versions, it has only been tested with LiveWhale 1.4.1 or better. Version 0.0.3 of LiveWhale Push also requires the presence of LiveWhale Places.
 
 ### Database Tables
 
@@ -47,11 +47,14 @@ You must add two new tables to your LiveWhale database as follows:
     callback_url:   varchar (255) latin1_general_ci
     object:         varchar (20) latin1_general_ci
     group_id:       integer (11), default: NULL
+    place_id:       integer (11), default: NULL
+    radius:         double unsigned, default: NULL
     tag:            varchar (100) utf8_general_ci, default: NULL
 
     index on:       object_tag
     index on:       object_group_id
     index_on:       object_group_id_tag
+    index on:       object_place_id
     index on:       client_id
 
 ### Dependencies
@@ -93,11 +96,12 @@ Web applications may use the three `/live/` REST urls to be able to manage their
 
 #### Subscribe
 
-To create a subscription, you will need to POST (at minimum) your `client_id`, `client_secret`, `object` and `callback_url` to the `/live/subscribe` url. (Https is recommended to maintain the security of your `client_secret`, but this is not enforced.) You may additionally add a `group_id`, a `tag` and a `verify_token`.
+To create a subscription, you will need to POST (at minimum) your `client_id`, `client_secret`, `object` and `callback_url` to the `/live/subscribe` url. (Https is recommended to maintain the security of your `client_secret`, but this is not enforced.) You may additionally add a `group_id`, a `place_id` and `radius`, a `tag` and a `verify_token`.
 
 Please note:
 
   * Tag requests are automatically canonicalized; tags are reduced to the singular form or the word, all lower case.
+  * Specifying a `place_id` without a `radius` assumes a zero radius, i.e. that place only.
   * Remember to encode your callback_url if non-basic-latin characters are present.
   * The `verify_token` can be used by you to differentiate similar subscriptions. It will be returned with the callback test only. It is not stored.
 
@@ -108,7 +112,9 @@ If your application does not need active management of subscriptions (i.e. they 
       -F 'client_secret=0123456798abcdef0123456798abcdef' \
       -F 'object=news' \
       -F 'tag=audio' \
-      -F 'group_id=' \
+      -F 'group_id=3' \
+      -F 'place_id=29' \
+      -F 'radius=0.75' \
       -F 'verify_token=some-verification-token' \
       -F 'callback_url=http://some.application.com/subscription/callback' \
       https://your.livewhale.com/live/subscribe/
@@ -124,7 +130,9 @@ If your subscription request is successfully created, you will receive a JSON ar
         id: 9,
         client_id: '0123456798abcdef0123456798abcdef',
         object: 'news',
-        group_id: '',
+        group_id: 3,
+        place_id: 29,
+        radius: 0.75,
         tag: 'audio'
       }
     ]
@@ -163,7 +171,9 @@ Once a subscription has been created, LiveWhale Push monitors all CRUD actions (
         subscription_id: 9,
         object: 'news',
         object_id: 7043
-        group_id: '',
+        group_id: 3,
+        place_id: 29,
+        radius: 0.75,
         tag: 'audio',
         updated_at: '2011-06-14T14:53:27-07:00',
         is_new: false,
