@@ -429,7 +429,6 @@ class LiveWhalePush {
       }
     }
     if ( !empty($after) ) {
-      if ( $_SERVER['REMOTE_ADDR'] == '149.175.43.62' ) @mail('davidwmckelvey@gmail.com', 'LiveWhale sav_success', var_export(array($after, $_LW->_POST), TRUE));
       if ( !empty($this->_before_update[$after['id']]['search_tags']) ) {
         $tags = explode(',', $this->_before_update[$after['id']]['search_tags']);
       } else {
