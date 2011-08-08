@@ -150,24 +150,25 @@ class LiveWhalePush {
       $query .= " AND `id` = {$args['id']}";
     } else {
       $query .= " AND `object` = '{$args['object']}'";
+      if ( !empty($args['place_id']) && !isset($args['radius']) ) $args['radius'] = 0;
       foreach ( LiveWhalePush::$_subscription_aspects as $aspect => $details ) {
-        if ( (!array_key_exists($aspect, $args) || empty($args[$aspect])) && $lead == 'SELECT * FROM' ) {
+        if ( (!array_key_exists($aspect, $args) || !isset($args[$aspect])) && $lead == 'SELECT * FROM' ) {
           $query .= " AND `{$aspect}` IS NULL";
-        } else if ( array_key_exists($aspect, $args) && !empty($args[$aspect]) ) {
+        } else if ( array_key_exists($aspect, $args) && isset($args[$aspect]) ) {
           $value = $args[$aspect];
           $value = eval($details['transform']);
-          $query .= " AND `{$aspect}` = " . ((is_int($value)) ? $value : "'{$value}'");
+          $query .= " AND `{$aspect}` = " . ((is_numeric($value)) ? $value : "'{$value}'");
         }
       }
     }
-    return "{$query};";
+    return "{$query} ORDER BY created_at;";
   }
 
   private function require_subscription_not_exist ( $args ) {
     global $_LW;
     $query = $this->subscription_query($args);
     $result = $_LW->query($query);
-    if ( !empty($result) && $result->num_rows == 1 ) HTTPStatusCodes::ok($this->subscription_to_json($result->fetch_assoc()));
+    if ( !empty($result) && $result->num_rows >= 1 ) HTTPStatusCodes::ok($this->subscription_to_json($result->fetch_assoc()));
   }
 
   private function require_successful_challenge ( $args ) {
@@ -346,7 +347,6 @@ class LiveWhalePush {
   	}
     $query .= " `" . LiveWhalePush::$_subscription_table . "`.`object` = '{$this->_object_type}' AND (`" . LiveWhalePush::$_subscription_table . "`.`group_id` IS NULL" . ((!empty($object['gid'])) ? " OR `" . LiveWhalePush::$_subscription_table . "`.`group_id` = {$object['gid']}" : "") . ") AND (`" . LiveWhalePush::$_subscription_table . "`.`tag` is NULL" . ((!empty($tags)) ? " OR `" . LiveWhalePush::$_subscription_table . "`.`tag` = '" . implode("' OR `" . LiveWhalePush::$_subscription_table . "`.`tag` = '", $tags) . "'" : "") . ");";
 		$result = $_LW->query($query);
-    if ( $_SERVER['REMOTE_ADDR'] == '149.175.43.62' ) @mail('davidwmckelvey@gmail.com', 'LiveWhale find_subscriptions_for', var_export(array($query, $result), TRUE));
   	if ( !empty($result) && $result->num_rows ) {
       while ( $subscription = $result->fetch_assoc() ) {
         $client_key = "{$subscription['client_secret']},{$subscription['email']}";
@@ -405,7 +405,7 @@ class LiveWhalePush {
   	global $_LW;
   	if ( $this->_watching && !empty($this->_before_update[$_LW->_POST['item_id']]) && !empty($this->_query) ) {
       $result = $_LW->query($this->_query);
-      if ( $result && $result->num_rows ) {
+      if ( !empty($result) && $result->num_rows ) {
         $after = $result->fetch_assoc();
         $changed = $this->changed($this->_before_update[$after['id']], $after);
         if ( !empty($_LW->_POST['places_id']) && !$this->has_matching_places($this->_before_update[$after['id']]['place_ids'], $_LW->_POST['places_id']) ) list($changed['place_ids'], $changed['place_latitudes'], $changed['place_longitudes']) = $this->get_existing_places($_LW->_POST['places_id']);
@@ -418,7 +418,7 @@ class LiveWhalePush {
     } else if ( $this->_watching && !empty($_LW->new_id) ) {
       $this->_query = "SELECT `livewhale_{$this->_object_type}`.* FROM `livewhale_{$this->_object_type}` WHERE `livewhale_{$this->_object_type}`.`id` = {$_LW->new_id};";
       $result = $_LW->query($this->_query);
-      if ( $result && $result->num_rows ) {
+      if ( !empty($result) && $result->num_rows ) {
         $after = $result->fetch_assoc();
         $changed = array('is_new' => TRUE);
         if ( !empty($_LW->_POST['places_id']) ) list($after['place_ids'], $after['place_latitudes'], $after['place_longitudes']) = $this->get_existing_places($_LW->_POST['places_id']);
