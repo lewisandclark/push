@@ -149,7 +149,7 @@ class LiveWhalePush {
     if ( array_key_exists('id', $args) && !empty($args['id']) ) {
       $query .= " AND `id` = {$args['id']}";
     } else {
-      $query .= " AND `object` = '{$args['object']}'";
+      $query .= " AND `object` = '{$args['object']}' AND `callback_url` = '{$args['callback_url']}'";
       if ( !empty($args['place_id']) && !isset($args['radius']) ) $args['radius'] = 0;
       foreach ( LiveWhalePush::$_subscription_aspects as $aspect => $details ) {
         if ( (!array_key_exists($aspect, $args) || !isset($args[$aspect])) && $lead == 'SELECT * FROM' ) {
