@@ -84,7 +84,6 @@ class LiveWhalePush {
     $this->_object_type = preg_replace('~_(edit|list)$~', '', $_LW->page);
     if ( in_array($this->_object_type, LiveWhalePush::$_subscription_objects) ) $this->_watching = TRUE;
     if ( $this->_watching ) {
-      $this->_degrees_to_radians = (pi() / 180.0);
       $this->_query = "SELECT `livewhale_{$this->_object_type}`.*, GROUP_CONCAT(`livewhale_places`.`id`) AS `place_ids`, GROUP_CONCAT(`livewhale_places`.`latitude`) AS `place_latitudes`, GROUP_CONCAT(`livewhale_places`.`longitude`) AS `place_longitudes` FROM `livewhale_{$this->_object_type}` INNER JOIN `livewhale_places2any` ON (`livewhale_{$this->_object_type}`.`id` = `livewhale_places2any`.`id2` AND `livewhale_places2any`.`type` = '{$this->_object_type}') INNER JOIN `livewhale_places` ON `livewhale_places`.`id` = `livewhale_places2any`.`id1` WHERE `livewhale_{$this->_object_type}`.`id`";
       if ( !empty($_GET['d']) ) { // editor delete
         $delete_id = preg_replace('~[^\d]+~', '', $_GET['d']);
