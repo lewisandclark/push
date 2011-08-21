@@ -342,7 +342,7 @@ class LiveWhalePush {
       $longitude_in_radians = $object['place_longitudes'] * LiveWhalePush::$_degrees_to_radians;
       $query .= " LEFT JOIN `livewhale_places` ON `livewhale_places`.`id` = `" . LiveWhalePush::$_subscription_table . "`.`place_id` WHERE (" . LiveWhalePush::$_subscription_table . ".`radius` IS NULL OR " . LiveWhalePush::$_subscription_table . ".`radius` >= (ACOS(SIN(`livewhale_places`.`latitude` * " . LiveWhalePush::$_degrees_to_radians . ") * SIN({$latitude_in_radians}) + COS(`livewhale_places`.`latitude` * " . LiveWhalePush::$_degrees_to_radians . ") * COS({$latitude_in_radians}) * COS({$longitude_in_radians} - `livewhale_places`.`longitude` * " . LiveWhalePush::$_degrees_to_radians . ")) * " . LiveWhalePush::$_earth_radius . ")) AND";
   	} else {
-      $query .= " WHERE";
+      $query .= " WHERE `" . LiveWhalePush::$_subscription_table . "`.`place_id` IS NULL AND";
   	}
     $query .= " `" . LiveWhalePush::$_subscription_table . "`.`object` = '{$this->_object_type}' AND (`" . LiveWhalePush::$_subscription_table . "`.`group_id` IS NULL" . ((!empty($object['gid'])) ? " OR `" . LiveWhalePush::$_subscription_table . "`.`group_id` = {$object['gid']}" : "") . ") AND (`" . LiveWhalePush::$_subscription_table . "`.`tag` is NULL" . ((!empty($tags)) ? " OR `" . LiveWhalePush::$_subscription_table . "`.`tag` = '" . implode("' OR `" . LiveWhalePush::$_subscription_table . "`.`tag` = '", $tags) . "'" : "") . ");";
 		$result = $_LW->query($query);
@@ -362,9 +362,12 @@ class LiveWhalePush {
           'updated_at' => date("c"),
           'is_new' => (($changed['is_new']) ? TRUE : FALSE),
           'is_deleted' => (($changed['is_deleted']) ? TRUE : FALSE),
+          'is_removed' => FALSE,
           'changed' => ((!$changed['is_new'] && !$changed['is_deleted']) ? array_keys($changed) : array())
         );
       }
+    } else {
+      // do calculations on prior subscription with is_removed TRUE
     }
     return NULL;
   }
