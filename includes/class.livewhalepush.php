@@ -388,13 +388,18 @@ class LiveWhalePush {
     		  $response = curl_exec($session);
           curl_close($session);
           $result = $this->is_valid_response($response, $callback_url);
-          if ( is_string($result) ) @mail($client_email, 'LiveWhale Push Subscription Error', "{$result}\npayload:{$json}");
+          if ( is_string($result) ) {
+            @mail($client_email, 'LiveWhale Push Subscription Error', "{$result}\npayload:{$json}");
+            return FALSE;
+          }
+          return TRUE;
         } catch (Exception $e) {
           if ( !empty($json) ) {
       		  @mail($client_email, 'LiveWhale Push Subscription Error', "Exception: {$e}\n\nThe data was: {$json}");
           } else {
       		  @mail($client_email, 'LiveWhale Push Subscription Error', "Exception: {$e}\n\nThe data was: " . var_export($updates, TRUE));
           }
+          return FALSE;
         }
       }
     }
@@ -472,6 +477,24 @@ class LiveWhalePush {
       return $this->notify_subscribers();
   	}
   	return NULL;
+  }
+
+  /* Admin Hooks */
+
+  public function force_push ( $object, $test_port = NULL ) {
+    $this->_object_type = 'events';
+    $this->find_subscriptions_for($object, explode(',', $row['search_tags']), array('is_new' => FALSE, 'is_deleted' => FALSE, 'is_removed' => FALSE));
+    if ( is_integer($test_port) && $test_port > 0 ) {
+      foreach ( $this->_subscriptions as $client => $updates ) {
+        $test_updates = array();
+        foreach ( $updates as $callback => $update ) {
+          $test_callback = preg_replace('~^http(s?)://([a-z\.\d\-]{4,})(\:?\d*)~i', "http$1://$2:$test_port", $callback);
+          $test_updates[$test_callback] = $update;
+        }
+        $this->_subscriptions[$client] = $test_updates;
+      }
+    }
+    return $this->notify_subscribers();
   }
 
 }
