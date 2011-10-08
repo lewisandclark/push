@@ -84,7 +84,7 @@ class LiveWhalePush {
     $this->_object_type = preg_replace('~_(edit|list)$~', '', $_LW->page);
     if ( in_array($this->_object_type, LiveWhalePush::$_subscription_objects) ) $this->_watching = TRUE;
     if ( $this->_watching ) {
-      $this->_query = "SELECT `livewhale_{$this->_object_type}`.*, GROUP_CONCAT(`livewhale_places`.`id`) AS `place_ids`, GROUP_CONCAT(`livewhale_places`.`latitude`) AS `place_latitudes`, GROUP_CONCAT(`livewhale_places`.`longitude`) AS `place_longitudes` FROM `livewhale_{$this->_object_type}` INNER JOIN `livewhale_places2any` ON (`livewhale_{$this->_object_type}`.`id` = `livewhale_places2any`.`id2` AND `livewhale_places2any`.`type` = '{$this->_object_type}') INNER JOIN `livewhale_places` ON `livewhale_places`.`id` = `livewhale_places2any`.`id1` WHERE `livewhale_{$this->_object_type}`.`id`";
+      $this->_query = "SELECT `livewhale_{$this->_object_type}`.*, GROUP_CONCAT(`livewhale_places`.`id`) AS `place_ids`, GROUP_CONCAT(`livewhale_places`.`latitude`) AS `place_latitudes`, GROUP_CONCAT(`livewhale_places`.`longitude`) AS `place_longitudes` FROM `livewhale_{$this->_object_type}` INNER JOIN `livewhale_places2any` ON ((`livewhale_{$this->_object_type}`.`id` = `livewhale_places2any`.`id2` OR (`livewhale_{$this->_object_type}`.`parent` IS NOT NULL AND `livewhale_{$this->_object_type}`.`parent` = `livewhale_places2any`.`id2`)) AND `livewhale_places2any`.`type` = '{$this->_object_type}') INNER JOIN `livewhale_places` ON `livewhale_places`.`id` = `livewhale_places2any`.`id1` WHERE `livewhale_{$this->_object_type}`.`id`";
       if ( !empty($_GET['d']) ) { // editor delete
         $delete_id = preg_replace('~[^\d]+~', '', $_GET['d']);
         if ( $_GET['d'] == $delete_id ) {
@@ -360,10 +360,10 @@ class LiveWhalePush {
           'radius' => ((empty($subscription['radius'])) ? '' : (float) $subscription['radius']),
           'tag' => ((empty($subscription['tag'])) ? '' : $subscription['tag']),
           'updated_at' => date("c"),
-          'is_new' => (($changed['is_new']) ? TRUE : FALSE),
-          'is_deleted' => (($changed['is_deleted']) ? TRUE : FALSE),
+          'is_new' => ((!empty($changed['is_new']) && $changed['is_new']) ? TRUE : FALSE),
+          'is_deleted' => ((!empty($changed['is_deleted']) && $changed['is_deleted']) ? TRUE : FALSE),
           'is_removed' => FALSE,
-          'changed' => ((!$changed['is_new'] && !$changed['is_deleted']) ? array_keys($changed) : array())
+          'changed' => (((empty($changed['is_new']) || !$changed['is_new']) && (empty($changed['is_deleted']) || !$changed['is_deleted'])) ? array_keys($changed) : array())
         );
       }
     } else {
