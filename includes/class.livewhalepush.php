@@ -453,7 +453,7 @@ class LiveWhalePush {
   	global $_LW;
     if ( $this->_watching && !empty($this->_before_update) && !empty($this->_query) ) {
       if ( !empty($this->_delete_ids) ) {
-        foreach ( $this->_delete_ids as $id ) $this->find_subscriptions_for($this->_before_update[$id], explode(',', $this->_before_update[$id]['search_tags']), array('is_deleted' => TRUE));
+        foreach ( $this->_delete_ids as $id ) if ( !empty($this->_before_update[$id]) ) $this->find_subscriptions_for($this->_before_update[$id], explode(',', $this->_before_update[$id]['search_tags']), array('is_deleted' => TRUE));
       } else {
         $result = $_LW->query($this->_query);
         if ( !empty($result) && $result->num_rows ) {
