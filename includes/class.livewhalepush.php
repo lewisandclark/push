@@ -481,9 +481,9 @@ class LiveWhalePush {
 
   /* Admin Hooks */
 
-  public function force_push ( $object, $test_port = NULL ) {
+  public function force_push ( $object, $test_port = NULL, $test_results = array('is_new' => FALSE, 'is_deleted' => FALSE, 'is_removed' => FALSE) ) {
     $this->_object_type = 'events';
-    $this->find_subscriptions_for($object, explode(',', $row['search_tags']), array('is_new' => FALSE, 'is_deleted' => FALSE, 'is_removed' => FALSE));
+    $this->find_subscriptions_for($object, explode(',', $row['search_tags']), $test_results);
     if ( is_integer($test_port) && $test_port > 0 ) {
       foreach ( $this->_subscriptions as $client => $updates ) {
         $test_updates = array();

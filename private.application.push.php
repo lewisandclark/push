@@ -2,31 +2,31 @@
 
 $_LW->REGISTERED_APPS['push']=array(
 	'title'=>'Push', // the module name
-	'handlers' => array('init','save_success','manager_submit','delete')
+	'handlers' => array('onLoad','onSaveSuccess','onManagerSubmit','onDelete')
 );
 
 // ----- PASS-THRU HANDLERS ---------------------------------------------------------
 
 class LiveWhaleApplicationPush {
 
-  public function init () {
+  public function onLoad () {
     global $_LW;
   	include_once($_LW->INCLUDES_DIR_PATH . '/client/modules/push/includes/class.livewhalepush.php');
     $_LW->REGISTERED_APPS['push']['object'] = new LiveWhalePush();
     return NULL;
   }
   
-  public function saveSuccess () {
+  public function onSaveSuccess () {
     global $_LW;
     return $_LW->REGISTERED_APPS['push']['object']->save_success();
   }
   
-  public function managerSubmit () {
+  public function onManagerSubmit () {
     global $_LW;
     return $_LW->REGISTERED_APPS['push']['object']->manager_submit();
   }
   
-  public function delete () {
+  public function onDelete () {
     global $_LW;
     return $_LW->REGISTERED_APPS['push']['object']->delete();
   }
